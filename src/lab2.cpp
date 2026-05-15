@@ -15,6 +15,7 @@
  */
 #include "My_string.hpp"
 #include "BaseFile.hpp"
+#include <cstring>
 int main() {
     /**
      * Задание 1. Массивы объектов класса.
@@ -136,7 +137,6 @@ int main() {
      *
      * Проверьте работу производных классов.
      */
-
     /**
      * Задание 2.2.1. Base32 кодировщик/декодировщик.
      *
@@ -155,7 +155,12 @@ int main() {
      * Добавьте возможность пользователю передать в конструктор таблицу
      * кодировки, по умолчанию используется таблица "A..Z1..6".
      */
-
+    Base32File B("./build/exapmle+.txt","w");
+    if (B.is_open()) {
+        const char* data = "Hello, File!";
+        size_t written = B.write(data, strlen(data));
+        std::cout << "Written " << written << " bytes to file (original)" << std::endl;
+    }
     /**
      * Задание 2.2.2. RLE-сжатие.
      *

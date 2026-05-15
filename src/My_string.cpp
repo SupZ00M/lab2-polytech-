@@ -77,3 +77,6 @@ MyString& MyString::operator=(const MyString& other) {
     }
     return *this;
 }
+char* MyString::c_str() {
+    return data;
+}

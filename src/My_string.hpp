@@ -13,6 +13,7 @@ public:
     MyString(const char* str);
     MyString(const MyString& other);
     ~MyString();
+    char* c_str();
 
     char get(int i) const;
     void set(int i, char c);
