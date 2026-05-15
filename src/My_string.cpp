@@ -42,6 +42,9 @@ void MyString::set(int i, char c) {
     data[i] = c;
 }
 
+
+
+
 void MyString::set_new_string(const char* str) {
     delete[] data;
     if (!str) {
@@ -64,4 +67,13 @@ void MyString::read_line() {
     std::string temp;
     std::getline(std::cin, temp);
     set_new_string(temp.c_str());
+}
+MyString& MyString::operator=(const MyString& other) {
+    if (this != &other) {
+        delete[] data;
+        length = other.length;
+        data = new char[length + 1];
+        strcpy(data, other.data);
+    }
+    return *this;
 }

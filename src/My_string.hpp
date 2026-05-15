@@ -19,8 +19,8 @@ public:
     void set_new_string(const char* str);
     void print() const;
     void read_line();
-
     int get_length() const { return length; }
+    MyString& operator=(const MyString& other);
 };
 
 #endif
