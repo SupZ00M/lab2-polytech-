@@ -8,6 +8,7 @@ BaseFile::BaseFile() {
     file =  nullptr;
     path =  MyString("");
     mode =  MyString("");
+    std::cout << "Base File constructor" << std::endl;
 }
 
 BaseFile::BaseFile(char* Path, char* Mode) {
@@ -18,7 +19,8 @@ BaseFile::BaseFile(char* Path, char* Mode) {
     if (!file) {
         std::cerr << "Error: Cannot open file " << std::endl;
         path.print();
-    }}
+    }
+    else {std::cout << "Base File constructor" << std::endl;}}
 BaseFile::BaseFile(FILE* File) {
     file = File;
     path = MyString("");
@@ -39,10 +41,9 @@ int BaseFile::is_open() {
 int BaseFile::can_read() {
     if (!is_open()) return 0;
     
-    // Получаем C-строку для анализа
     const char* mode_str = mode.c_str();  
     
-    // Проверяем наличие 'r' в режиме
+
     for (size_t i = 0; i < mode.get_length(); i++) {
         if (mode.get(i) == 'r') return 1;
         if (mode.get(i) == '+') return 1;  
@@ -129,11 +130,13 @@ static const char DEFAULT_TABLE[32] = {
 
 Base32File::Base32File() : BaseFile() {
     memcpy(custom_table, DEFAULT_TABLE, 32);
+    std::cout << "Base32 File constructor" << std::endl;
 }
 
 Base32File::Base32File(const char* path, const char* mode) 
     : BaseFile(const_cast<char*>(path), const_cast<char*>(mode)) {
     memcpy(custom_table, DEFAULT_TABLE, 32);
+    std::cout << "Base32 File constructor" << std::endl;
 }
 
 Base32File::Base32File(const char* path, const char* mode, const char table[32]) 
@@ -143,9 +146,11 @@ Base32File::Base32File(const char* path, const char* mode, const char table[32])
     } else {
         memcpy(custom_table, DEFAULT_TABLE, 32);
     }
+    std::cout << "Base32 File constructor" << std::endl;
 }
 
 Base32File::~Base32File() {
+    std::cout << "File32 closed automatically" << std::endl;
 }
 
 
@@ -182,14 +187,12 @@ int Base32File::encode32(const char* raw, int size, char* encoded) {
     
         while (bit_count >= encode_bits) {
             bit_count -= encode_bits;
-            // Извлекаем старшие 5 бит
-            int index = (buf >> bit_count) & 31;  // 31 = 0x1F = 11111b
+            int index = (buf >> bit_count) & 31; 
             encoded[pos] = table32[index];
             pos++;
         }
     }
     
-    // Если остались биты, добавляем последний символ
     if (bit_count > 0) {
         int index = (buf << (encode_bits - bit_count)) & 31;
         encoded[pos] = table32[index];
@@ -238,7 +241,6 @@ int Base32File::decode32(const char* encoded, int size, char* decoded) {
 
         while (bit_count >= char_size) {
             bit_count -= char_size;
-            // Извлекаем старшие 8 бит
             decoded[pos] = (buffer >> bit_count) & 0xFF;
             pos++;
         }
@@ -312,4 +314,122 @@ size_t Base32File::read(void* buf, size_t max) {
     delete[] decoded_buffer;
     
     return to_copy;
+}
+
+RleFile::RleFile() :  BaseFile(), read_pos(0) {
+    std::cout << "RLE File constructor" << std::endl;}
+
+RleFile::RleFile(const char* path, const char* mode) 
+    : BaseFile(const_cast<char*>(path), const_cast<char*>(mode)), read_pos(0) {std::cout << "RLE File constructor" << std::endl;}
+
+RleFile::~RleFile() {std::cout << "RLE File closed automatically" << std::endl;}
+
+size_t RleFile::write(const void* buf, size_t n) {
+    if (!is_open() || !can_write() || !buf || n == 0) return 0;
+    
+    const char* data = static_cast<const char*>(buf);
+    std::vector<char> compressed;
+    
+    // RLE сжатие
+    for (size_t i = 0; i < n; i++) {
+        char current = data[i];
+        size_t count = 1;
+        
+        while (i + count < n && data[i + count] == current && count < 255) {
+            count++;
+        }
+        
+        compressed.push_back(static_cast<char>(count));
+        compressed.push_back(current);
+        i += count - 1;
+    }
+    
+
+    return write_raw(compressed.data(), compressed.size());
+}
+
+
+size_t RleFile::read(void* buf, size_t max) {
+    if (!is_open() || !can_read() || !buf || max == 0) return 0;
+    
+    char* output = static_cast<char*>(buf);
+    size_t output_pos = 0;
+    
+ 
+    while (output_pos < max) {
+        unsigned char count;
+        char value;
+        
+    
+        if (read_raw(&count, 1) != 1) break;
+        if (read_raw(&value, 1) != 1) break;
+        
+   
+        for (unsigned char i = 0; i < count && output_pos < max; i++) {
+            output[output_pos++] = value;
+        }
+    }
+    
+    return output_pos;
+}
+
+int RleFile::seek(long offset) {
+    read_buffer.clear();
+    read_pos = 0;
+    return BaseFile::seek(offset);
+}
+
+char* RleFile::decompress(size_t& out_size) {
+    if (!is_open() || !can_read()) {
+        out_size = 0;
+        return nullptr;
+    }
+    
+    seek(0);
+
+    std::vector<char> decompressed;
+    char single_char;
+    size_t bytes_read;
+    
+    while ((bytes_read = read(&single_char, 1)) > 0) {
+        decompressed.push_back(single_char);
+    }
+    
+    out_size = decompressed.size();
+    char* result = new char[out_size];
+    for (size_t i = 0; i < out_size; i++) {
+        result[i] = decompressed[i];
+    }
+    
+    return result;
+}
+
+void write_int(BaseFile& file, int n) {
+    
+    if (n < 0) {
+        file.write("-", 1);
+        n = -n;
+    }
+    
+    if (n == 0) {
+        file.write("0", 1);
+        return;
+    }
+    
+
+    int divisor = 1;
+    int temp = n;
+    while (temp > 9) {
+        divisor *= 10;
+        temp /= 10;
+    }
+    
+
+    while (divisor > 0) {
+        int digit = n / divisor;
+        char c = '0' + digit;
+        file.write(&c, 1);
+        n %= divisor;
+        divisor /= 10;
+    }
 }

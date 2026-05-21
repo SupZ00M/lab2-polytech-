@@ -1,6 +1,7 @@
 #ifndef BASEFILE_H
 #define BASEFILE_H
 
+#include <vector>
 #include <cstdio>
 #include "My_string.hpp"
 
@@ -31,7 +32,7 @@ public:
    virtual size_t read(void* buf, size_t max_bytes);
     
     long tell();
-    int seek(long offset);
+    virtual int seek(long offset);
     
     BaseFile(const BaseFile&) = delete;
     BaseFile& operator=(const BaseFile&) = delete;
@@ -40,8 +41,6 @@ public:
     BaseFile& operator=(BaseFile&& other) noexcept;
 };
 
-#include "BaseFile.hpp"
-#include "My_string.hpp"
 
 class Base32File : public BaseFile {
 private:
@@ -66,7 +65,25 @@ public:
     size_t read(void* buf, size_t max) override;
 };
 
+class RleFile : public BaseFile {
+private:
+    std::vector<char> write_buffer;   
+    std::vector<char> read_buffer;    
+    size_t read_pos;                  
+    
+public:
 
+    RleFile();
+    RleFile(const char* path, const char* mode);
+    ~RleFile();
+    
+   
+    size_t write(const void* buf, size_t n) override;
+    size_t read(void* buf, size_t max) override;
+    int seek(long offset) override;
+    char* decompress(size_t& out_size);
+};
+void write_int(BaseFile& file, int n);
 #endif
 
 
