@@ -120,7 +120,7 @@ BaseFile& BaseFile::operator=(BaseFile&& other) noexcept {
 
 
 
-static const char DEFAULT_TABLE[32] = {
+static  char DEFAULT_TABLE[32] = {
     'A','B','C','D','E','F','G','H','I','J',
     'K','L','M','N','O','P','Q','R','S','T',
     'U','V','W','X','Y','Z','1','2','3','4','5','6'
@@ -133,14 +133,14 @@ Base32File::Base32File() : BaseFile() {
     std::cout << "Base32 File constructor" << std::endl;
 }
 
-Base32File::Base32File(const char* path, const char* mode) 
-    : BaseFile(const_cast<char*>(path), const_cast<char*>(mode)) {
+Base32File::Base32File( char* path, char* mode) 
+    : BaseFile(path,mode) {
     memcpy(custom_table, DEFAULT_TABLE, 32);
     std::cout << "Base32 File constructor" << std::endl;
 }
 
-Base32File::Base32File(const char* path, const char* mode, const char table[32]) 
-    : BaseFile(const_cast<char*>(path), const_cast<char*>(mode)) {
+Base32File::Base32File( char* path,char* mode, char table[32]) 
+    : BaseFile((path), (mode)) {
     if (table) {
         memcpy(custom_table, table, 32);
     } else {
@@ -162,12 +162,12 @@ int Base32File::decoded32_size(int enc_size) {
     return (enc_size * 5) / 8;
 }
 
-int Base32File::encode32(const char* raw, int size, char* encoded) {
+int Base32File::encode32( const char* raw, int size, char* encoded) {
     if (!raw || size <= 0 || !encoded) {
         return 1;
     }
     
-    const char table32[32] = {
+   char table32[32] = {
         'A','B','C','D','E','F','G','H','I','J',
         'K','L','M','N','O','P','Q','R','S','T',
         'U','V','W','X','Y','Z','1','2','3','4','5','6'
@@ -203,12 +203,12 @@ int Base32File::encode32(const char* raw, int size, char* encoded) {
 }
 
 
-int Base32File::decode32(const char* encoded, int size, char* decoded) {
+int Base32File::decode32( char* encoded, int size, char* decoded) {
     if (!encoded || size <= 0 || !decoded) {
         return 1;
     }
     
-    const char table32[32] = {
+     char table32[32] = {
         'A','B','C','D','E','F','G','H','I','J',
         'K','L','M','N','O','P','Q','R','S','T',
         'U','V','W','X','Y','Z','1','2','3','4','5','6'
@@ -319,15 +319,15 @@ size_t Base32File::read(void* buf, size_t max) {
 RleFile::RleFile() :  BaseFile(), read_pos(0) {
     std::cout << "RLE File constructor" << std::endl;}
 
-RleFile::RleFile(const char* path, const char* mode) 
-    : BaseFile(const_cast<char*>(path), const_cast<char*>(mode)), read_pos(0) {std::cout << "RLE File constructor" << std::endl;}
+RleFile::RleFile( char* path,  char* mode) 
+    : BaseFile((path),mode), read_pos(0) {std::cout << "RLE File constructor" << std::endl;}
 
 RleFile::~RleFile() {std::cout << "RLE File closed automatically" << std::endl;}
 
 size_t RleFile::write(const void* buf, size_t n) {
     if (!is_open() || !can_write() || !buf || n == 0) return 0;
     
-    const char* data = static_cast<const char*>(buf);
+   const char* data = static_cast<const char*>(buf);
     std::vector<char> compressed;
     
     // RLE сжатие
@@ -339,7 +339,7 @@ size_t RleFile::write(const void* buf, size_t n) {
             count++;
         }
         
-        compressed.push_back(static_cast<char>(count));
+        compressed.push_back(count);
         compressed.push_back(current);
         i += count - 1;
     }
