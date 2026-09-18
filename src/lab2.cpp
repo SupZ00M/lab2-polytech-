@@ -13,7 +13,10 @@
  * При работе с классами - в учебных целях - нельзя пользоваться контейнерами
  * стандартной библиотеки и нужно следовать принципам инкапсуляции.
  */
-
+#include "My_string.hpp"
+#include "IFile.hpp"
+#include "BaseFile.hpp"
+#include <cstring>
 int main() {
     /**
      * Задание 1. Массивы объектов класса.
@@ -26,9 +29,13 @@ int main() {
      * Выведите элементы массива на консоль.
      */
 
-    /* {
-        MyString ar[3] = { ... };
-    } */
+    {
+        MyString ar[] = {"uWu","oWo","eWe"};
+        for (int i = 0; i < 3; ++i) {
+        ar[i].print();
+        }
+    }
+
 
     /**
      * Замените размер массива с 3 на 5, не меняя список инициализаторов.
@@ -36,6 +43,14 @@ int main() {
      * Чем были инициализированы последние 2 элемента? Какие значения могут
      * стоять в списке инициализаторов - в вашем случае и в общем случае?
      */
+    {
+        MyString ar[5] = {"uWu","oWo","eWe"};
+        for (int i = 0; i < 3; ++i) {
+        ar[i].print();
+        }
+    }
+
+
 
     /**
      * Задание 1.2. Массив указателей на объекты.
@@ -43,12 +58,24 @@ int main() {
      * Объявите и проинициализируйте массив arPtr из трех указателей на объекты
      * типа MyString. Выведите элементы массива на консоль.
      */
+     {
+       MyString* arPtr[3] = {
+        new MyString(":)"),
+        new MyString(";("),
+        new MyString(":P")};
+        for (int i = 0; i < 3; ++i) {
+        (*arPtr[i]).print();
+        }
 
+
+
+
+     }
     /**
      * Задание 2. Простое наследование. Аргументы конструктора, передаваемые в
      * базовый класс.
      */
-
+   
     /**
      * Задание 2.1. Базовый класс.
      *
@@ -88,7 +115,9 @@ int main() {
      *
      * Проверьте работу этого класса.
      */
-
+    BaseFile A("./build/exapmle.txt","r");
+    if (A.is_open())  std::cout << "Open" << "\n";
+    
     /**
      * Задание 2.2. Производные классы.
      *
@@ -109,7 +138,6 @@ int main() {
      *
      * Проверьте работу производных классов.
      */
-
     /**
      * Задание 2.2.1. Base32 кодировщик/декодировщик.
      *
@@ -128,7 +156,10 @@ int main() {
      * Добавьте возможность пользователю передать в конструктор таблицу
      * кодировки, по умолчанию используется таблица "A..Z1..6".
      */
-
+    Base32File B("./build/exapmle+.txt","w");
+    char* data = "Hello, File!";
+    size_t written = B.write(data, strlen(data));
+    std::cout << "Written " << written << " bytes to file (original)" << std::endl;
     /**
      * Задание 2.2.2. RLE-сжатие.
      *
@@ -150,6 +181,20 @@ int main() {
      * например, котенка из лабораторной №3 прошлого семестра. Посмотрите,
      * получилось ли добиться уменьшения размера хранимых данных.
      */
+    BaseFile Cat("./build/cat.asc","rb");
+    RleFile Comp("./build/cat+.asc", "w+b");
+    char buffer1[1024];
+    size_t bytes_read;
+     while ((bytes_read = Cat.read(buffer1, sizeof(buffer1))) > 0) {
+         Comp.write(buffer1, bytes_read);}
+
+
+         
+   
+  
+
+ 
+
 
     /**
      * Задание 2.3. Конструкторы и деструкторы базового и производного классов.
@@ -169,32 +214,86 @@ int main() {
      * запись.
      */
 
-    /* {
-        BaseFile bf(...);
-        Base32File b32f(...);
-        RleFile rf(...);
+    BaseFile bf1("./build/number_base.txt", "w");
+    Base32File b32f1("./build/number_base32.txt", "w");
+    RleFile rf1("./build/number_rle.txt", "w");
+    
+    int n = 123456;
+    
 
-        int n = 123456;
-        if (n < 0) { bf.write(...); }
-        while (n > 0) {
-            bf.write(...);
-            // ...
+    {
+        int num = n;
+        if (num < 0) { 
+            bf1.write("-", 1); 
+            num = -num;
         }
+        
+    
+        int pow10 = 1;
+        int temp = num;
+        while (temp >= 10) {
+            pow10 *= 10;
+            temp /= 10;
+        }
+        
+      
+        while (pow10 > 0) {
+            int digit = num / pow10;
+            char c = '0' + digit;
+            bf1.write(&c, 1);
+            num %= pow10;
+            pow10 /= 10;
+        }
+    }
+    
 
-        n = 123456;
-        if (n < 0) { b32f.write(...); }
-        while (n > 0) {
-            b32f.write(...);
-            // ...
+    {
+        int num = n;
+        if (num < 0) { 
+            b32f1.write("-", 1); 
+            num = -num;
         }
-
-        n = 123456;
-        if (n < 0) { rf.write(...); }
-        while (n > 0) {
-            rf.write(...);
-            // ...
+        
+        int pow10 = 1;
+        int temp = num;
+        while (temp >= 10) {
+            pow10 *= 10;
+            temp /= 10;
         }
-    } */
+        
+        while (pow10 > 0) {
+            int digit = num / pow10;
+            char c = '0' + digit;
+            b32f1.write(&c, 1);
+            num %= pow10;
+            pow10 /= 10;
+        }
+    }
+    
+   
+    {
+        int num = n;
+        if (num < 0) { 
+            rf1.write("-", 1); 
+            num = -num;
+        }
+        
+        int pow10 = 1;
+        int temp = num;
+        while (temp >= 10) {
+            pow10 *= 10;
+            temp /= 10;
+        }
+        
+        while (pow10 > 0) {
+            int digit = num / pow10;
+            char c = '0' + digit;
+            rf1.write(&c, 1);
+            num %= pow10;
+            pow10 /= 10;
+        }
+    }
+    
 
     /**
      * Задание 2.5. Передача объекта по ссылке / указателю.
@@ -213,7 +312,12 @@ int main() {
      * Имеет ли вызов этой функции для производного класса тот же результат,
      * что и код, который вы написали выше? Почему?
      */
-
+    BaseFile bf2("number_base+.txt", "w");
+    Base32File b32f2("number_base32+.txt", "w");
+    RleFile rf2("number_rle+.txt", "w");
+       write_int(bf2, n);
+          write_int( b32f2, n);
+             write_int(rf2, n);
     /**
      * Задание 2.6. Виртуальные функции, позднее связывание.
      *
@@ -224,7 +328,9 @@ int main() {
      * Как изменилось поведение при вызове функции `write_int` для производных
      * классов? Почему?
      */
-
+std::cout << "Size of BaseFile: " << sizeof(BaseFile) << std::endl;
+std::cout << "Size of Base32File: " << sizeof(Base32File) << std::endl;
+std::cout << "Size of RleFile: " << sizeof(RleFile) << std::endl;
     /**
      * Задание 2.7. Виртуальный деструктор.
      *
@@ -236,17 +342,17 @@ int main() {
      * Исправьте эту ситуацию.
      */
 
-    /* {
+    {
         BaseFile *files[] = { 
-            new BaseFile(...), 
-            new RleFile(...), 
-            new Base32File(...), 
+            new BaseFile(), 
+            new RleFile(), 
+            new Base32File(), 
         };
 
         for (int i = 0; i < 3; ++i) {
             files[i]->write("Hello!", 6);
         }
-    } */
+    } 
 
     /**
      * Задание 2.8. Массив объектов производных классов.
@@ -261,16 +367,16 @@ int main() {
      * логику, используя массив указателей на объекты базового класса.
      */
 
-    /* {
-        BaseFile *base_files = new BaseFile[2] { BaseFile(...), BaseFile(...) };
-        BaseFile *b32_files = new Base32File[2] { Base32File(...), Base32File(...) };
+      /*{
+        BaseFile *base_files = new BaseFile[2] { BaseFile(), BaseFile() };
+        BaseFile *b32_files = new Base32File[2] { Base32File(), Base32File() };
         for (int i = 0; i < 2; ++i) {
             base_files[i].write("Hello!", 6);
             b32_files[i].write("Hello!", 6);
         }
         delete [] base_files;
         delete [] b32_files;
-    } */
+    }  */
 
     /**
      * Задание 3. Чисто виртуальные функции. Интерфейсы. Композиция классов.
