@@ -14,6 +14,7 @@
  * стандартной библиотеки и нужно следовать принципам инкапсуляции.
  */
 #include "My_string.hpp"
+#include "IFile.hpp"
 #include "BaseFile.hpp"
 #include <cstring>
 int main() {

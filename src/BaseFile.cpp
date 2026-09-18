@@ -40,30 +40,19 @@ int BaseFile::is_open() {
 
 int BaseFile::can_read() {
     if (!is_open()) return 0;
-    
-    const char* mode_str = mode.c_str();  
-    
-
-    for (size_t i = 0; i < mode.get_length(); i++) {
-        if (mode.get(i) == 'r') return 1;
-        if (mode.get(i) == '+') return 1;  
+    for (size_t i = 0; i < (size_t)mode.get_length(); i++) {
+        char c = mode.get(i);
+        if (c == 'r' || c == '+') return 1;
     }
-    
     return 0;
 }
 
 int BaseFile::can_write() {
     if (!is_open()) return 0;
-    
-    const char* mode_str = mode.c_str();
-    
-   
-    for (size_t i = 0; i < mode.get_length(); i++) {
-        char ch = mode.get(i);
-        if (ch == 'w' || ch == 'a') return 1;
-        if (ch == '+') return 1;
+    for (size_t i = 0; i < (size_t)mode.get_length(); i++) {
+        char c = mode.get(i);
+        if (c == 'w' || c == 'a' || c == '+') return 1;
     }
-    
     return 0;
 }
 
@@ -92,9 +81,8 @@ long BaseFile::tell() {
 }
 
 int BaseFile::seek(long offset) {
-    if (!is_open()) return 0;
-    
-    return fseek(file, offset, SEEK_SET) == 0;
+    if (!is_open()) return -1;
+    return fseek(file, offset, SEEK_SET) == 0 ? 0 : -1;
 }
 
 
@@ -326,50 +314,65 @@ RleFile::~RleFile() {std::cout << "RLE File closed automatically" << std::endl;}
 
 size_t RleFile::write(const void* buf, size_t n) {
     if (!is_open() || !can_write() || !buf || n == 0) return 0;
-    
-   const char* data = static_cast<const char*>(buf);
+
+    const char* data = static_cast<const char*>(buf);
+    write_buffer.insert(write_buffer.end(), data, data + n);
+
     std::vector<char> compressed;
-    
-    // RLE сжатие
-    for (size_t i = 0; i < n; i++) {
-        char current = data[i];
+    for (size_t i = 0; i < write_buffer.size(); i++) {
+        char current = write_buffer[i];
         size_t count = 1;
-        
-        while (i + count < n && data[i + count] == current && count < 255) {
+        while (i + count < write_buffer.size() &&
+               write_buffer[i + count] == current && count < 255) {
             count++;
         }
-        
-        compressed.push_back(count);
+        compressed.push_back(static_cast<char>(count));
         compressed.push_back(current);
         i += count - 1;
     }
-    
 
-    return write_raw(compressed.data(), compressed.size());
+    size_t written = write_raw(compressed.data(), compressed.size());
+    if (written == compressed.size()) {
+        write_buffer.clear();
+        return n;                       // ← исходные байты
+    }
+    return (written * n) / compressed.size();
 }
-
 
 size_t RleFile::read(void* buf, size_t max) {
     if (!is_open() || !can_read() || !buf || max == 0) return 0;
-    
+
     char* output = static_cast<char*>(buf);
     size_t output_pos = 0;
-    
- 
+
+    while (read_pos < read_buffer.size() && output_pos < max) {
+        output[output_pos++] = read_buffer[read_pos++];
+    }
+    if (output_pos >= max) return output_pos;
+
+    read_buffer.clear();
+    read_pos = 0;
+
     while (output_pos < max) {
         unsigned char count;
         char value;
-        
-    
         if (read_raw(&count, 1) != 1) break;
         if (read_raw(&value, 1) != 1) break;
-        
-   
-        for (unsigned char i = 0; i < count && output_pos < max; i++) {
-            output[output_pos++] = value;
+
+        for (unsigned char i = 0; i < count; i++) {
+            read_buffer.push_back(value);
+        }
+
+        while (read_pos < read_buffer.size() && output_pos < max) {
+            output[output_pos++] = read_buffer[read_pos++];
+        }
+
+        if (read_pos >= read_buffer.size()) {
+            read_buffer.clear();
+            read_pos = 0;
         }
     }
-    
+
     return output_pos;
 }
 

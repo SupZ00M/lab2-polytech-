@@ -12,6 +12,7 @@ add_library(filecore STATIC
 
 target_include_directories(filecore PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs
 )
 
 
